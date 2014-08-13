@@ -7,6 +7,7 @@
 #include <QImage>
 #include <QPixmap>
 #include <QPainter>
+#include <QDebug>
 
 class MyThread : public QThread
 {
@@ -45,14 +46,14 @@ private:
     };
 
     QImage screen;
-    QRect game_rect;
+    QRect game_rect; // 画面上のゲーム画面の位置とサイズ。
     Animal board[BOARDSIZE][BOARDSIZE];
     QColor colors[10];
     int color_i;
     bool thread_stop;
 
     QImage shotScreen(const int x = 0, const int y = 0, const int w = -1, const int h = -1);
-    void analyzeScreen();
+    bool analyzeScreen();
     void analyzeBoard();
     void search();
     bool checkSwapAnimal(const int x1, const int y1, const int x2, const int y2);

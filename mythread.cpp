@@ -29,10 +29,12 @@ MyThread::run()
     {
         color_i = 0;
         if (thread_stop) break;
-        analyzeScreen();
-        analyzeBoard();
-        search();
-        emit changeImage(screen);
+        if (analyzeScreen())
+        {
+            analyzeBoard();
+            search();
+            emit changeImage(screen);
+        }
         QThread::msleep(33);
     }
 }
@@ -44,7 +46,7 @@ MyThread::shotScreen(const int x, const int y, const int w, const int h)
             .toImage().convertToFormat(QImage::Format_ARGB32);
 }
 
-void
+bool
 MyThread::analyzeScreen()
 {
     QImage img = shotScreen();
@@ -64,18 +66,18 @@ MyThread::analyzeScreen()
             if (*(rgb+x) == tcolor)
             {
                 count++;
-
                 if (count % wh == 0)
                 {
                     if (count == wh * 5)
                     {
-                        game_rect = QRect(x-wh-1, y-4, wh, wh);
-                        return;
+                        game_rect = QRect(x-(wh-1)+FRAME, y-4+FRAME,
+                                          wh-FRAME*2, wh-FRAME*2);
+                        return true;
                     }
                     else
                     {
-                        x -= wh-1;
-                        goto Lcont;;
+                        x -= (wh-1);
+                        goto Lcont;
                     }
                 }
             }
@@ -88,14 +90,18 @@ MyThread::analyzeScreen()
 Lcont:
         rgb += sw;
     }
+
+    return false;
 }
 
 void
 MyThread::analyzeBoard()
 {
-    screen = shotScreen(game_rect.x(), game_rect.y(), game_rect.width(), game_rect.height());
+    screen = shotScreen(game_rect.x(), game_rect.y(),
+                        game_rect.width(), game_rect.height());
 
     const QRgb *rgb = (QRgb*)screen.bits();
+    const int sw = screen.width();
 
     QRgb index[8];
     index[Gorilla]      = qRgb(233, 59,  33);
@@ -120,22 +126,21 @@ MyThread::analyzeBoard()
         for (int x = 0; x < BOARDSIZE; ++x)
         {
             const QRgb *t = rgb
-                    + (FRAME+PADDING + y*ICON + y*MARGIN)*wh
-                    +  FRAME+PADDING + x*ICON + x*MARGIN;
-            for (int c = 0; c < BOARDSIZE; ++c)
+                    + (PADDING + y*(ICON+MARGIN))*sw
+                    +  PADDING + x*(ICON+MARGIN);
+            for (int c = 0; c < 8; ++c)
             {
                 int sum = 0;
-                const QRgb test = index[c];
+                const int r = qRed(index[c]);
+                const int g = qGreen(index[c]);
+                const int b = qBlue(index[c]);
                 for (int cy = 0; cy < ICON; ++cy)
                 {
                     for (int cx = 0; cx < ICON; ++cx)
                     {
-                        if (qRed(test) == qRed(*(t+cx+cy*wh)) &&
-                            qGreen(test) == qGreen(*(t+cx+cy*wh)) &&
-                            abs(qBlue(test)-qBlue(*(t+cx+cy*wh))) < 10 )
-                        {
-                            ++sum;
-                        }
+                        const QRgb temp(*(t+cx+cy*sw));
+                        if (r == qRed(temp) && g == qGreen(temp) &&
+                            abs(b-qBlue(temp)) < 10) ++sum;
                     }
                 }
                 if (sum > 50)
@@ -222,8 +227,7 @@ MyThread::drawAnswer(const int x1, const int y1, const int x2, const int y2)
 {
     int x_1, y_1, x_2, y_2;
 
-    x_1 = x_2 = FRAME + PADDING;
-    y_1 = y_2 = FRAME + PADDING;
+    x_1 = x_2 = y_1 = y_2 = PADDING;
 
     x_1 += x1*(MARGIN+ICON);
     x_2 = (x1 == x2) ? x_1 : x_2 + x2*(MARGIN+ICON);

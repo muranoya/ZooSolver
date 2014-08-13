@@ -11,13 +11,15 @@ MainWindow::MainWindow(QWidget *parent)
 {
     setWindowFlags(Qt::WindowStaysOnTopHint);
     setWindowTitle(tr("ZooSolver"));
-    setFixedSize(300, 300);
+    setFixedSize(290, 290);
 
     setCentralWidget(view);
     view->setScene(scene);
     scene->addItem(pixmapitem);
 
+    operation_start->setShortcut(tr("Ctrl+S"));
     operation_stop->setEnabled(false);
+    operation_stop->setShortcut(tr("Ctrl+X"));
 
     operation->addAction(operation_start);
     operation->addAction(operation_stop);
